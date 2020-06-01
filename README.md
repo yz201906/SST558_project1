@@ -4,9 +4,7 @@ Yinzhou Zhu
 5/31/2020
 
   - [About JSON data](#about-json-data)
-  - [Pakacges for reading JSON](#pakacges-for-reading-json)
-      - [`rjson`, `jsonlite` and `RJSONIO`](#rjson-jsonlite-and-rjsonio)
-      - [Why choosing `jsonlite`?](#why-choosing-jsonlite)
+  - [Packages for reading JSON](#packages-for-reading-json)
   - [JSON example: NHL API](#json-example-nhl-api)
   - [Formatted data](#formatted-data)
   - [References](#references)
@@ -31,11 +29,31 @@ transfer beyond **JavaScript** objects between devices across the web.
 This makes it a popular way for accessing data through cloud where
 **JSON API** is implemented<sup>5</sup>.
 
-## Pakacges for reading JSON
+## Packages for reading JSON
 
-### `rjson`, `jsonlite` and `RJSONIO`
+### `rjson`, `jsonlite`, `RJSONIO` and `tidyjson`
+
+`rjson`, `jsonlite` and `RJSONIO` are 3 popular R packages used for
+working with **JSON** data. Functionality wise, they are all very
+similar, where they allow conversion of **R** objects from and to
+**JSON** data. The major differences being mainly: usage syntax,
+internal implementation methods (such as how data is read etc., thus
+affecting speed) and extended features. For example, `jsonlite` is able
+to stream to/from JSON file if the data that we are dealing with is
+large, which could be an advantage<sup>6</sup>. `tidyjson` on the other
+hand seems to be gaining traction. Under the same framework of
+`tidyverse`, this package could be particularly useful in streamlining
+our pipeline when appropriate<sup>7</sup>.
 
 ### Why choosing `jsonlite`?
+
+I have chosen to work with `jsonlite` for the following reasons:  
+*. I have gotten most familiar with this package due to course usage.  
+*. It has advantage and flexibility for dealing with a large amount of
+data as mentioned above.  
+\*. The overall consensus I got from reading online is that `jsonlite`
+strikes a very good balance between features and performance and is
+particulate in format conversions.
 
 ## JSON example: NHL API
 
@@ -48,4 +66,8 @@ This makes it a popular way for accessing data through cloud where
 **2.** <https://developer.mozilla.org/en-US/docs/Web/JavaScript>  
 **3.** <https://www.w3schools.com/js/js_json_intro.asp>  
 **4.** <https://www.json.org/json-en.html>  
-**5.** <https://nordicapis.com/the-benefits-of-using-json-api/>
+**5.** <https://nordicapis.com/the-benefits-of-using-json-api/>  
+**6.**
+<http://anotherpeak.org/blog/tech/2016/03/10/understand_json_3.html>
+**7.**
+<https://cran.csiro.au/web/packages/tidyjson/vignettes/introduction-to-tidyjson.html>
