@@ -13,6 +13,7 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 library(tidyverse)
 library(httr)
 library(jsonlite)
+library(knitr)
 ```
 
 ## About JSON data
@@ -64,6 +65,18 @@ nhl_franchise_records <- function(franchise_id, records='season'){
 ```
 
 ## Formatted data
+List of all franchises.
+```{r list all franchises}
+nhl_franchise() %>% head()
+```
+How many times have New York Rangers and Boston Bruins each played?
+```{r list Wanderers vs Senators}
+totals <- nhl_franchise_team_totals()
+nyr_totals <- totals$data %>% filter(franchiseId==6) %>% tally(gamesPlayed, name = "New York Rangers")
+bb_totals <- totals$data %>% filter(franchiseId==10) %>% tally(gamesPlayed, name = "Boston Bruins")
+row.names(nyr_totals)<-"Total games played"
+kable(cbind(nyr_totals, bb_totals))
+```
 
 ## References  
 **1.** https://www.bigcommerce.com/ecommerce-answers/what-javascript-and-why-it-important/  
