@@ -67,8 +67,9 @@ nhl_franchise_records <- function(franchise_id, records='season'){
 ## Formatted data
 List of all franchises.
 ```{r list all franchises}
-nhl_franchise() %>% head()
+nhl_franchise()$data %>% kable()
 ```
+
 How many times have New York Rangers and Boston Bruins each played?
 ```{r list Wanderers vs Senators}
 totals <- nhl_franchise_team_totals()
