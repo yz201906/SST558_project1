@@ -57,6 +57,37 @@ particulate in format conversions.
 
 ## JSON example: NHL API
 
+``` r
+api_url <- 'https://records.nhl.com/site/api'
+nhl_franchise <- function(){
+  franchises <- httr::GET(paste0(api_url, '/franchise'))
+  franchises <- httr::content(franchises, 'text')
+  franchises <- fromJSON(franchises, flatten = TRUE)
+}
+nhl_franchise_team_totals <- function(){
+  franchises <- httr::GET(paste0(api_url, '/franchise-team-totals'))
+  franchises <- httr::content(franchises, 'text')
+  franchises <- fromJSON(franchises, flatten = TRUE)
+}
+nhl_franchise_records <- function(franchise_id, records='season'){
+  if (!records%in%c('season', 'goalie', 'skater')) {
+    stop("Records can only be 'season', 'goalie' or 'skater'.")
+  }
+  if (is.na(as.numeric(franchise_id))) {
+    stop("Please enter a valid franchasie ID.")
+  }
+  if (records=='season') {  
+    franchises <- httr::GET(paste0(api_url, '/franchise-season-records?cayenneExp=franchiseId=',franchise_id))
+  } else if (records=='goalie') {
+    franchises <- httr::GET(paste0(api_url, '/franchise-goalie-records?cayenneExp=franchiseId=',franchise_id))
+  } else {
+    franchises <- httr::GET(paste0(api_url, '/franchise-skater-records?cayenneExp=franchiseId=',franchise_id))
+  }
+  franchises <- httr::content(franchises, 'text')
+  franchises <- fromJSON(franchises, flatten = TRUE)
+}
+```
+
 ## Formatted data
 
 ## References
