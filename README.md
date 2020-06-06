@@ -166,20 +166,20 @@ scatter_plot <-selected_columns %>% ggplot(aes(penaltyMinutes, win_ratio)) + geo
 scatter_plot + geom_smooth(method = lm) + theme(panel.background = element_rect(fill = 'transparent', color = 'black'), panel.grid = element_blank())
 ```
 
-![](/figure-gfm/pentalty%20vs%20win_ratio-1.png)<!-- -->
+![](/README_files/figure-gfm/pentalty%20vs%20win_ratio-1.png)<!-- -->
 
 ``` r
 scatter_plot + geom_smooth() + theme(panel.background = element_rect(fill = 'transparent', color = 'black'), panel.grid = element_blank())
 ```
 
-![](/figure-gfm/pentalty%20vs%20win_ratio-2.png)<!-- -->
+![](/README_files/figure-gfm/pentalty%20vs%20win_ratio-2.png)<!-- -->
 
 ``` r
 bar_plot <- selected_columns %>% ggplot(aes(era)) + geom_bar(aes(era)) + geom_bar(aes(fill = era), data = subset(selected_columns, win_ratio>0.4)) + facet_wrap(vars(game_type), scales = "free") + xlab("Era (Teams Joint Before/After 1991)") + ylab("Number of Teams")
 bar_plot + theme(panel.background = element_rect(fill = 'transparent', color = 'black'), panel.grid = element_blank()) + scale_fill_discrete(name="Category", labels=c("Modern: Win Ratio > 0.3", "Pre-Modern: Win Ratio > 0.3"))
 ```
 
-![](/figure-gfm/pre-modern%20teams%20vs%20modern%20teams-1.png)<!-- -->
+![](/README_files/figure-gfm/pre-modern%20teams%20vs%20modern%20teams-1.png)<!-- -->
 
 ``` r
 selected_columns <- totals$data%>%group_by(gameTypeId)%>%select(gamesPlayed, gameTypeId, triCode, roadLosses, roadWins, gameTypeId, wins) %>% mutate(win_ratio=wins/gamesPlayed, .keep = 'unused') %>% mutate(category_col= if_else(win_ratio<0.3,'T4', if_else(win_ratio>=0.3&win_ratio<0.4, 'T3', if_else(win_ratio>=0.4&win_ratio<0.5, 'T2', if_else(win_ratio>0.5, 'T1', 'NA')))))
@@ -188,7 +188,7 @@ box_plot <- selected_columns %>% ggplot(aes(category_col, road_win_loss_ratio)) 
 box_plot + theme(panel.background = element_rect(fill = 'transparent', color = 'black'), panel.grid = element_blank(), legend.position = "none")
 ```
 
-![](/figure-gfm/road%20losses-1.png)<!-- -->
+![](/README_files/figure-gfm/road%20losses-1.png)<!-- -->
 
 ## References
 
