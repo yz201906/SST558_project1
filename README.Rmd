@@ -86,20 +86,25 @@ kable(cbind(nyr_bb_games))
 Whats the relationship between penalty minutes and wins ratio?  
 
 ```{r pentalty vs win_ratio}
-selected_columns <- totals$data%>%group_by(gameTypeId)%>%select(triCode, gamesPlayed, gameTypeId, penaltyMinutes, wins) %>% mutate(win_ratio=wins/gamesPlayed, .keep = 'unused')
-selected_columns <- selected_columns %>% mutate(game_type=paste0('Game Type ID: ', gameTypeId), .keep = 'unused')
+selected_columns <- totals$data%>%group_by(gameTypeId)%>%select(triCode,firstSeasonId, gamesPlayed, gameTypeId, penaltyMinutes, wins) %>% mutate(win_ratio=wins/gamesPlayed, .keep = 'unused')
+selected_columns <- selected_columns %>% mutate(game_type=paste0('Game Type ID: ', gameTypeId), .keep = 'unused') %>% mutate(era = if_else(firstSeasonId <=19911992,'Pre-Modern','Modern'), .keep = 'unused')
 scatter_plot <-selected_columns %>% ggplot(aes(penaltyMinutes, win_ratio)) + geom_point(aes(color=penaltyMinutes)) + facet_wrap(vars(game_type), scales = "free") + xlab('Accumulated Penalty Time (Minutes)') + ylab('Accumulated Win Ratio') + geom_text(aes(label = triCode), color="red", data = subset(selected_columns, win_ratio>0.5), size = 2, nudge_y = 0.02)
-scatter_plot + geom_smooth(method = lm)
-scatter_plot + geom_smooth()
+scatter_plot + geom_smooth(method = lm) + theme(panel.background = element_rect(fill = 'transparent', color = 'black'), panel.grid = element_blank())
+scatter_plot + geom_smooth() + theme(panel.background = element_rect(fill = 'transparent', color = 'black'), panel.grid = element_blank())
 ```
 
+```{r pre-modern teams vs modern teams}
+bar_plot <- selected_columns %>% ggplot(aes(era)) + geom_bar(aes(era)) + geom_bar(aes(fill = era), data = subset(selected_columns, win_ratio>0.4)) + facet_wrap(vars(game_type), scales = "free") + xlab("Era (Teams Joint Before/After 1991)") + ylab("Number of Teams")
+bar_plot + theme(panel.background = element_rect(fill = 'transparent', color = 'black'), panel.grid = element_blank()) + scale_fill_discrete(name="Category", labels=c("Modern: Win Ratio > 0.3", "Pre-Modern: Win Ratio > 0.3"))
+```
 
 ```{r road losses}
 selected_columns <- totals$data%>%group_by(gameTypeId)%>%select(gamesPlayed, gameTypeId, triCode, roadLosses, roadWins, gameTypeId, wins) %>% mutate(win_ratio=wins/gamesPlayed, .keep = 'unused') %>% mutate(category_col= if_else(win_ratio<0.3,'T4', if_else(win_ratio>=0.3&win_ratio<0.4, 'T3', if_else(win_ratio>=0.4&win_ratio<0.5, 'T2', if_else(win_ratio>0.5, 'T1', 'NA')))))
 selected_columns <- selected_columns %>% mutate(game_type=paste0('Game Type ID: ', gameTypeId), .keep = 'unused') %>% mutate(road_win_loss_ratio=roadWins/roadLosses, .keep = 'unused')
-bar_plot <- selected_columns %>% ggplot(aes(category_col, road_win_loss_ratio)) + geom_boxplot() + geom_jitter(aes(color=category_col)) + facet_wrap(vars(game_type), scales = 'free')
-bar_plot
+box_plot <- selected_columns %>% ggplot(aes(category_col, road_win_loss_ratio)) + geom_boxplot() + geom_jitter(aes(color=category_col)) + facet_wrap(vars(game_type), scales = 'free') + xlab("Team Tiers (Based on Total Win Ratio)") + ylab("Road Win-Loss Ratio")
+box_plot + theme(panel.background = element_rect(fill = 'transparent', color = 'black'), panel.grid = element_blank(), legend.position = "none")
 ```
+
 
 ## References  
 **1.** https://www.bigcommerce.com/ecommerce-answers/what-javascript-and-why-it-important/  
