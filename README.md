@@ -48,10 +48,10 @@ our pipeline when appropriate<sup>7</sup>.
 ### Why choosing `jsonlite`?
 
 I have chosen to work with `jsonlite` for the following reasons:  
-*. I have gotten most familiar with this package due to course usage.  
-*. It has advantage and flexibility for dealing with a large amount of
+\* I have gotten most familiar with this package due to course usage.  
+\* It has advantage and flexibility for dealing with a large amount of
 data as mentioned above.  
-\*. The overall consensus I got from reading online is that `jsonlite`
+\* The overall consensus I got from reading online is that `jsonlite`
 strikes a very good balance between features and performance and is
 particulate in format conversions.
 
@@ -137,19 +137,51 @@ nhl_franchise()$data %>% kable()
 | 37 |      20002001 |           NA |               30 | Wild           | Minnesota     |
 | 38 |      20172018 |           NA |               54 | Golden Knights | Vegas         |
 
-How many times have New York Rangers and Boston Bruins each played?
+Basic overview for New York Rangers and Boston Bruins.  
+There seems to be more than one game type, but I summarized them all
+together here.
 
 ``` r
 totals <- nhl_franchise_team_totals()
-nyr_totals <- totals$data %>% filter(franchiseId==6) %>% tally(gamesPlayed, name = "New York Rangers")
-bb_totals <- totals$data %>% filter(franchiseId==10) %>% tally(gamesPlayed, name = "Boston Bruins")
-row.names(nyr_totals)<-"Total games played"
-kable(cbind(nyr_totals, bb_totals))
+nyr_bb_seasons <- totals$data %>% filter(franchiseId==6|franchiseId==10) %>% select(franchiseId, gamesPlayed, wins)
+nyr_bb_games <- nyr_bb_seasons %>% group_by(franchiseId) %>% summarise(games_played=sum(gamesPlayed), wins=sum(wins))
+nyr_bb_games <- nyr_bb_games %>% mutate(win_ratio=wins/games_played)
+nyr_bb_games$wins<-NULL
+rownames(nyr_bb_games)<-c('New York Rangers', 'Boston Ruins')
+colnames(nyr_bb_games)<-c('Franchise ID', 'Games Played', 'Win Ratio')
+kable(cbind(nyr_bb_games))
 ```
 
-|                    | New York Rangers | Boston Bruins |
-| ------------------ | ---------------: | ------------: |
-| Total games played |             7221 |          7019 |
+|                  | Franchise ID | Games Played | Win Ratio |
+| ---------------- | -----------: | -----------: | --------: |
+| New York Rangers |            6 |         7221 | 0.4887135 |
+| Boston Ruins     |           10 |         7019 | 0.4416584 |
+
+Whats the relationship between penalty minutes and wins ratio?
+
+``` r
+selected_columns <- totals$data%>%group_by(gameTypeId)%>%select(triCode, gamesPlayed, gameTypeId, penaltyMinutes, wins) %>% mutate(win_ratio=wins/gamesPlayed, .keep = 'unused')
+selected_columns <- selected_columns %>% mutate(game_type=paste0('Game Type ID: ', gameTypeId), .keep = 'unused')
+scatter_plot <-selected_columns %>% ggplot(aes(penaltyMinutes, win_ratio)) + geom_point(aes(color=penaltyMinutes)) + facet_wrap(vars(game_type), scales = "free") + xlab('Accumulated Penalty Time (Minutes)') + ylab('Accumulated Win Ratio') + geom_label(aes(label = triCode), color="red", data = subset(selected_columns, win_ratio>0.5), size = 2)
+scatter_plot + geom_smooth(method = lm)
+```
+
+![](D:/GoogleDrive/Courses/NCState/ST558/project1/README_files/figure-gfm/pentalty%20vs%20win_ratio-1.png)<!-- -->
+
+``` r
+scatter_plot + geom_smooth()
+```
+
+![](D:/GoogleDrive/Courses/NCState/ST558/project1/README_files/figure-gfm/pentalty%20vs%20win_ratio-2.png)<!-- -->
+
+``` r
+selected_columns <- totals$data%>%group_by(gameTypeId)%>%select(gamesPlayed, gameTypeId, triCode, roadLosses, roadWins, gameTypeId, wins) %>% mutate(win_ratio=wins/gamesPlayed, .keep = 'unused') %>% mutate(category_col= if_else(win_ratio<0.3,'T4', if_else(win_ratio>=0.3&win_ratio<0.4, 'T3', if_else(win_ratio>=0.4&win_ratio<0.5, 'T2', if_else(win_ratio>0.5, 'T1', 'NA')))))
+selected_columns <- selected_columns %>% mutate(game_type=paste0('Game Type ID: ', gameTypeId), .keep = 'unused') %>% mutate(road_win_loss_ratio=roadWins/roadLosses, .keep = 'unused')
+bar_plot <- selected_columns %>% ggplot(aes(category_col, road_win_loss_ratio)) + geom_boxplot() + geom_jitter(aes(color=category_col)) + facet_wrap(vars(game_type), scales = 'free')
+bar_plot
+```
+
+![](D:/GoogleDrive/Courses/NCState/ST558/project1/README_files/figure-gfm/road%20losses-1.png)<!-- -->
 
 ## References
 

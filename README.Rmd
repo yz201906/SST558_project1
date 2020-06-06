@@ -20,18 +20,18 @@ library(knitr)
 **JavaScript** is the most widely used language that powers interactions between client devices and server/web applications, where it allows programmers to implement complex features<sup>1</sup>. As a high-level language, it is also light-weight<sup>2</sup>.  
 JavaScript Object Notation (**JSON**), as its name also implies, is a type of data that is easily converted from and to **JavaScript** objects<sup>3</sup>. **JSON** is stored as text string, which makes it possible to store **JavaScript** objects as text. It is now a very standard way for data communication over the network, which used to be primarily with **XML** format that is much heavier in weight.  
 As described, **JSON** was built with purpose of being a standardized transfer language that is easy for human to read and at the same time easy for machine to parse and execute <sup>4</sup>.  
-The flexibility of **JSON** means it's also suitable for general data transfer beyond **JavaScript** objects between devices across the web. This makes it a popular way for accessing data through cloud where **JSON API** is implemented<sup>5</sup>. 
+The flexibility of **JSON** means it's also suitable for general data transfer beyond **JavaScript** objects between devices across the web. This makes it a popular way for accessing data through cloud where **JSON API** is implemented<sup>5</sup>.  
 
 ## Packages for reading JSON  
 ### `rjson`, `jsonlite`, `RJSONIO` and `tidyjson`  
-`rjson`, `jsonlite` and `RJSONIO` are 3 popular R packages used for working with **JSON** data. Functionality wise, they are all very similar, where they allow conversion of **R** objects from and to **JSON** data. The major differences being mainly: usage syntax, internal implementation methods (such as how data is read etc., thus affecting speed) and extended features. For example, `jsonlite` is able to stream to/from JSON file if the data that we are dealing with is large, which could be an advantage<sup>6</sup>. `tidyjson` on the other hand seems to be gaining traction. Under the same framework of `tidyverse`, this package could be particularly useful in streamlining our pipeline when appropriate<sup>7</sup>. 
+`rjson`, `jsonlite` and `RJSONIO` are 3 popular R packages used for working with **JSON** data. Functionality wise, they are all very similar, where they allow conversion of **R** objects from and to **JSON** data. The major differences being mainly: usage syntax, internal implementation methods (such as how data is read etc., thus affecting speed) and extended features. For example, `jsonlite` is able to stream to/from JSON file if the data that we are dealing with is large, which could be an advantage<sup>6</sup>. `tidyjson` on the other hand seems to be gaining traction. Under the same framework of `tidyverse`, this package could be particularly useful in streamlining our pipeline when appropriate<sup>7</sup>.  
 
 ### Why choosing `jsonlite`?  
 I have chosen to work with `jsonlite` for the following reasons:  
-*. I have gotten most familiar with this package due to course usage.  
-*. It has advantage and flexibility for dealing with a large amount of data as mentioned above.  
-*. The overall consensus I got from reading online is that `jsonlite` strikes a very good balance between features and performance and is particulate in format conversions.  
-
+* I have gotten most familiar with this package due to course usage.  
+* It has advantage and flexibility for dealing with a large amount of data as mentioned above.  
+* The overall consensus I got from reading online is that `jsonlite` strikes a very good balance between features and performance and is particulate in format conversions.  
+  
 ## JSON example: NHL API
 ```{r NHL api}
 api_url <- 'https://records.nhl.com/site/api'
@@ -70,13 +70,35 @@ List of all franchises.
 nhl_franchise()$data %>% kable()
 ```
 
-How many times have New York Rangers and Boston Bruins each played?
-```{r list Wanderers vs Senators}
+Basic overview for New York Rangers and Boston Bruins.  
+There seems to be more than one game type, but I summarized them all together here.  
+```{r list NYR and BB}
 totals <- nhl_franchise_team_totals()
-nyr_totals <- totals$data %>% filter(franchiseId==6) %>% tally(gamesPlayed, name = "New York Rangers")
-bb_totals <- totals$data %>% filter(franchiseId==10) %>% tally(gamesPlayed, name = "Boston Bruins")
-row.names(nyr_totals)<-"Total games played"
-kable(cbind(nyr_totals, bb_totals))
+nyr_bb_seasons <- totals$data %>% filter(franchiseId==6|franchiseId==10) %>% select(franchiseId, gamesPlayed, wins)
+nyr_bb_games <- nyr_bb_seasons %>% group_by(franchiseId) %>% summarise(games_played=sum(gamesPlayed), wins=sum(wins))
+nyr_bb_games <- nyr_bb_games %>% mutate(win_ratio=wins/games_played)
+nyr_bb_games$wins<-NULL
+rownames(nyr_bb_games)<-c('New York Rangers', 'Boston Ruins')
+colnames(nyr_bb_games)<-c('Franchise ID', 'Games Played', 'Win Ratio')
+kable(cbind(nyr_bb_games))
+```
+
+Whats the relationship between penalty minutes and wins ratio?  
+
+```{r pentalty vs win_ratio}
+selected_columns <- totals$data%>%group_by(gameTypeId)%>%select(triCode, gamesPlayed, gameTypeId, penaltyMinutes, wins) %>% mutate(win_ratio=wins/gamesPlayed, .keep = 'unused')
+selected_columns <- selected_columns %>% mutate(game_type=paste0('Game Type ID: ', gameTypeId), .keep = 'unused')
+scatter_plot <-selected_columns %>% ggplot(aes(penaltyMinutes, win_ratio)) + geom_point(aes(color=penaltyMinutes)) + facet_wrap(vars(game_type), scales = "free") + xlab('Accumulated Penalty Time (Minutes)') + ylab('Accumulated Win Ratio') + geom_label(aes(label = triCode), color="red", data = subset(selected_columns, win_ratio>0.5), size = 2)
+scatter_plot + geom_smooth(method = lm)
+scatter_plot + geom_smooth()
+```
+
+
+```{r road losses}
+selected_columns <- totals$data%>%group_by(gameTypeId)%>%select(gamesPlayed, gameTypeId, triCode, roadLosses, roadWins, gameTypeId, wins) %>% mutate(win_ratio=wins/gamesPlayed, .keep = 'unused') %>% mutate(category_col= if_else(win_ratio<0.3,'T4', if_else(win_ratio>=0.3&win_ratio<0.4, 'T3', if_else(win_ratio>=0.4&win_ratio<0.5, 'T2', if_else(win_ratio>0.5, 'T1', 'NA')))))
+selected_columns <- selected_columns %>% mutate(game_type=paste0('Game Type ID: ', gameTypeId), .keep = 'unused') %>% mutate(road_win_loss_ratio=roadWins/roadLosses, .keep = 'unused')
+bar_plot <- selected_columns %>% ggplot(aes(category_col, road_win_loss_ratio)) + geom_boxplot() + geom_jitter(aes(color=category_col)) + facet_wrap(vars(game_type), scales = 'free')
+bar_plot
 ```
 
 ## References  
