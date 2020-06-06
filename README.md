@@ -162,7 +162,7 @@ Whats the relationship between penalty minutes and wins ratio?
 ``` r
 selected_columns <- totals$data%>%group_by(gameTypeId)%>%select(triCode, gamesPlayed, gameTypeId, penaltyMinutes, wins) %>% mutate(win_ratio=wins/gamesPlayed, .keep = 'unused')
 selected_columns <- selected_columns %>% mutate(game_type=paste0('Game Type ID: ', gameTypeId), .keep = 'unused')
-scatter_plot <-selected_columns %>% ggplot(aes(penaltyMinutes, win_ratio)) + geom_point(aes(color=penaltyMinutes)) + facet_wrap(vars(game_type), scales = "free") + xlab('Accumulated Penalty Time (Minutes)') + ylab('Accumulated Win Ratio') + geom_label(aes(label = triCode), color="red", data = subset(selected_columns, win_ratio>0.5), size = 2)
+scatter_plot <-selected_columns %>% ggplot(aes(penaltyMinutes, win_ratio)) + geom_point(aes(color=penaltyMinutes)) + facet_wrap(vars(game_type), scales = "free") + xlab('Accumulated Penalty Time (Minutes)') + ylab('Accumulated Win Ratio') + geom_text(aes(label = triCode), color="red", data = subset(selected_columns, win_ratio>0.5), size = 2, nudge_y = 0.02)
 scatter_plot + geom_smooth(method = lm)
 ```
 
