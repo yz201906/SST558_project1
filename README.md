@@ -166,13 +166,13 @@ scatter_plot <-selected_columns %>% ggplot(aes(penaltyMinutes, win_ratio)) + geo
 scatter_plot + geom_smooth(method = lm)
 ```
 
-![](D:/GoogleDrive/Courses/NCState/ST558/project1/README_files/figure-gfm/pentalty%20vs%20win_ratio-1.png)<!-- -->
+![](/README_files/figure-gfm/pentalty%20vs%20win_ratio-1.png)<!-- -->
 
 ``` r
 scatter_plot + geom_smooth()
 ```
 
-![](D:/GoogleDrive/Courses/NCState/ST558/project1/README_files/figure-gfm/pentalty%20vs%20win_ratio-2.png)<!-- -->
+![](/README_files/figure-gfm/pentalty%20vs%20win_ratio-2.png)<!-- -->
 
 ``` r
 selected_columns <- totals$data%>%group_by(gameTypeId)%>%select(gamesPlayed, gameTypeId, triCode, roadLosses, roadWins, gameTypeId, wins) %>% mutate(win_ratio=wins/gamesPlayed, .keep = 'unused') %>% mutate(category_col= if_else(win_ratio<0.3,'T4', if_else(win_ratio>=0.3&win_ratio<0.4, 'T3', if_else(win_ratio>=0.4&win_ratio<0.5, 'T2', if_else(win_ratio>0.5, 'T1', 'NA')))))
@@ -181,7 +181,7 @@ bar_plot <- selected_columns %>% ggplot(aes(category_col, road_win_loss_ratio)) 
 bar_plot
 ```
 
-![](D:/GoogleDrive/Courses/NCState/ST558/project1/README_files/figure-gfm/road%20losses-1.png)<!-- -->
+![](/README_files/figure-gfm/road%20losses-1.png)<!-- -->
 
 ## References
 
