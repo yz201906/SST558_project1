@@ -59,29 +59,29 @@ particulate in format conversions.
 
 ``` r
 api_url <- 'https://records.nhl.com/site/api'
-nhl_franchise <- function(){
+nhl_franchise <- function() {
   franchises <- httr::GET(paste0(api_url, '/franchise'))
   franchises <- httr::content(franchises, 'text')
   franchises <- fromJSON(franchises, flatten = TRUE)
 }
-nhl_franchise_team_totals <- function(){
+nhl_franchise_team_totals <- function() {
   franchises <- httr::GET(paste0(api_url, '/franchise-team-totals'))
   franchises <- httr::content(franchises, 'text')
   franchises <- fromJSON(franchises, flatten = TRUE)
 }
-nhl_franchise_records <- function(franchise_id, records='season'){
-  if (!records%in%c('season', 'goalie', 'skater')) {
+nhl_franchise_records <- function(franchise_id, records = 'season') {
+  if (!records %in% c('season', 'goalie', 'skater')) {
     stop("Records can only be 'season', 'goalie' or 'skater'.")
   }
   if (is.na(as.numeric(franchise_id))) {
     stop("Please enter a valid franchasie ID.")
   }
-  if (records=='season') {  
-    franchises <- httr::GET(paste0(api_url, '/franchise-season-records?cayenneExp=franchiseId=',franchise_id))
-  } else if (records=='goalie') {
-    franchises <- httr::GET(paste0(api_url, '/franchise-goalie-records?cayenneExp=franchiseId=',franchise_id))
+  if (records == 'season') {
+    franchises <- httr::GET(paste0(api_url, '/franchise-season-records?cayenneExp=franchiseId=', franchise_id))
+  } else if (records == 'goalie') {
+    franchises <- httr::GET(paste0(api_url, '/franchise-goalie-records?cayenneExp=franchiseId=', franchise_id))
   } else {
-    franchises <- httr::GET(paste0(api_url, '/franchise-skater-records?cayenneExp=franchiseId=',franchise_id))
+    franchises <- httr::GET(paste0(api_url, '/franchise-skater-records?cayenneExp=franchiseId=', franchise_id))
   }
   franchises <- httr::content(franchises, 'text')
   franchises <- fromJSON(franchises, flatten = TRUE)
@@ -90,10 +90,10 @@ nhl_franchise_records <- function(franchise_id, records='season'){
 
 ## Formatted data
 
-List of all franchises.
+### List of all franchises.
 
 ``` r
-nhl_franchise()$data %>% kable()
+nhl_franchise()$data %>% kable(caption = "Display of the entire content of list of all franchises.")
 ```
 
 | id | firstSeasonId | lastSeasonId | mostRecentTeamId | teamCommonName | teamPlaceName |
@@ -137,54 +137,116 @@ nhl_franchise()$data %>% kable()
 | 37 |      20002001 |           NA |               30 | Wild           | Minnesota     |
 | 38 |      20172018 |           NA |               54 | Golden Knights | Vegas         |
 
-Basic overview for New York Rangers and Boston Bruins.  
-There seems to be more than one game type, but I summarized them all
-together here.
+Display of the entire content of list of all franchises.
+
+### Basic overview for New York Rangers and Boston Bruins.
+
+There seems to be more than one game type, I summarized each here.
 
 ``` r
 totals <- nhl_franchise_team_totals()
-nyr_bb_seasons <- totals$data %>% filter(franchiseId==6|franchiseId==10) %>% select(franchiseId, gamesPlayed, wins)
-nyr_bb_games <- nyr_bb_seasons %>% group_by(franchiseId) %>% summarise(games_played=sum(gamesPlayed), wins=sum(wins))
-nyr_bb_games <- nyr_bb_games %>% mutate(win_ratio=wins/games_played)
-nyr_bb_games$wins<-NULL
-rownames(nyr_bb_games)<-c('New York Rangers', 'Boston Ruins')
-colnames(nyr_bb_games)<-c('Franchise ID', 'Games Played', 'Win Ratio')
-kable(cbind(nyr_bb_games))
+nyr_bb_seasons <- totals$data %>%
+  filter(franchiseId == 6 | franchiseId == 10) %>%
+  select(franchiseId, gamesPlayed, wins, gameTypeId)
+nyr_bb_games_2 <- nyr_bb_seasons %>%
+  group_by(franchiseId) %>%
+  filter(gameTypeId == 2) %>%
+  summarise(games_played = sum(gamesPlayed), wins = sum(wins))
+nyr_bb_games_3 <- nyr_bb_seasons %>%
+  group_by(franchiseId) %>%
+  filter(gameTypeId == 3) %>%
+  summarise(games_played = sum(gamesPlayed), wins = sum(wins))
+nyr_bb_games_2 <- nyr_bb_games_2 %>% mutate(win_ratio = wins / games_played)
+nyr_bb_games_3 <- nyr_bb_games_3 %>% mutate(win_ratio = wins / games_played)
+nyr_bb_games_2$wins <- NULL
+nyr_bb_games_3$wins <- NULL
+rownames(nyr_bb_games_2) <- c('New York Rangers', 'Boston Ruins')
+colnames(nyr_bb_games_2) <- c('Franchise ID', 'Games Played', 'Win Ratio', 'Game Type ID')
+rownames(nyr_bb_games_3) <- c('New York Rangers', 'Boston Ruins')
+colnames(nyr_bb_games_3) <- c('Franchise ID', 'Games Played', 'Win Ratio', 'Game Type ID')
+
+kable(nyr_bb_games_2, caption = 'Win ratio stats for Game Type 2')
 ```
 
 |                  | Franchise ID | Games Played | Win Ratio |
 | ---------------- | -----------: | -----------: | --------: |
-| New York Rangers |            6 |         7221 | 0.4887135 |
-| Boston Ruins     |           10 |         7019 | 0.4416584 |
+| New York Rangers |            6 |         6570 | 0.4882801 |
+| Boston Ruins     |           10 |         6504 | 0.4391144 |
 
-Whats the relationship between penalty minutes and wins ratio?
+Win ratio stats for Game Type 2
 
 ``` r
-selected_columns <- totals$data%>%group_by(gameTypeId)%>%select(triCode,firstSeasonId, gamesPlayed, gameTypeId, penaltyMinutes, wins) %>% mutate(win_ratio=wins/gamesPlayed, .keep = 'unused')
-selected_columns <- selected_columns %>% mutate(game_type=paste0('Game Type ID: ', gameTypeId), .keep = 'unused') %>% mutate(era = if_else(firstSeasonId <=19911992,'Pre-Modern','Modern'), .keep = 'unused')
-scatter_plot <-selected_columns %>% ggplot(aes(penaltyMinutes, win_ratio)) + geom_point(aes(color=penaltyMinutes)) + facet_wrap(vars(game_type), scales = "free") + xlab('Accumulated Penalty Time (Minutes)') + ylab('Accumulated Win Ratio') + geom_text(aes(label = triCode), color="red", data = subset(selected_columns, win_ratio>0.5), size = 2, nudge_y = 0.02)
-scatter_plot + geom_smooth(method = lm) + theme(panel.background = element_rect(fill = 'transparent', color = 'black'), panel.grid = element_blank())
+kable(nyr_bb_games_3, caption = 'Win ratio stats for Game Type 3')
+```
+
+|                  | Franchise ID | Games Played | Win Ratio |
+| ---------------- | -----------: | -----------: | --------: |
+| New York Rangers |            6 |          651 | 0.4930876 |
+| Boston Ruins     |           10 |          515 | 0.4737864 |
+
+Win ratio stats for Game Type 3
+
+### Whats the relationship between penalty minutes and wins ratio?
+
+``` r
+selected_columns <- totals$data %>%
+  group_by(gameTypeId) %>%
+  select(triCode, firstSeasonId, gamesPlayed, gameTypeId, penaltyMinutes, wins) %>%
+  mutate(win_ratio = wins / gamesPlayed, .keep = 'unused')
+selected_columns <- selected_columns %>%
+  mutate(game_type = paste0('Game Type ID: ', gameTypeId), .keep = 'unused') %>%
+  mutate(era = if_else(firstSeasonId <= 19911992, 'Pre-Modern', 'Modern'), .keep = 'unused')
+scatter_plot <- selected_columns %>% ggplot(aes(penaltyMinutes, win_ratio)) +
+  geom_point(aes(color = penaltyMinutes)) +
+  facet_wrap(vars(game_type), scales = "free") +
+  xlab('Accumulated Penalty Time (Minutes)') +
+  ylab('Accumulated Win Ratio') +
+  geom_text(aes(label = triCode), color = "red", data = subset(selected_columns, win_ratio > 0.5), size = 2, nudge_y = 0.02) +
+  theme(panel.background = element_rect(fill = 'transparent', color = 'black'), panel.grid = element_blank())
+scatter_plot + geom_smooth(method = lm)
 ```
 
 ![](/README_files/figure-gfm/pentalty%20vs%20win_ratio-1.png)<!-- -->
 
 ``` r
-scatter_plot + geom_smooth() + theme(panel.background = element_rect(fill = 'transparent', color = 'black'), panel.grid = element_blank())
+scatter_plot + geom_smooth()
 ```
 
 ![](/README_files/figure-gfm/pentalty%20vs%20win_ratio-2.png)<!-- -->
 
+### Are there performance differences between teams joint before 1991 and after 1991?
+
 ``` r
-bar_plot <- selected_columns %>% ggplot(aes(era)) + geom_bar(aes(era)) + geom_bar(aes(fill = era), data = subset(selected_columns, win_ratio>0.4)) + facet_wrap(vars(game_type), scales = "free") + xlab("Era (Teams Joint Before/After 1991)") + ylab("Number of Teams")
-bar_plot + theme(panel.background = element_rect(fill = 'transparent', color = 'black'), panel.grid = element_blank()) + scale_fill_discrete(name="Category", labels=c("Modern: Win Ratio > 0.3", "Pre-Modern: Win Ratio > 0.3"))
+bar_plot <- selected_columns %>% ggplot(aes(era)) +
+  geom_bar(aes(era)) +
+  geom_bar(aes(fill = era), data = subset(selected_columns, win_ratio > 0.4)) +
+  facet_wrap(vars(game_type), scales = "free") +
+  xlab("Era (Teams Joint Before/After 1991)") +
+  ylab("Number of Teams")
+bar_plot +
+  theme(panel.background = element_rect(fill = 'transparent', color = 'black'), panel.grid = element_blank()) +
+  scale_fill_discrete(name = "Category", labels = c("Modern: Win Ratio > 0.3", "Pre-Modern: Win Ratio > 0.3"))
 ```
 
 ![](/README_files/figure-gfm/pre-modern%20teams%20vs%20modern%20teams-1.png)<!-- -->
 
+### Is road-win-loss indicative of total win ratio? Team tiers were set artificially based on win ratios (no other factors were considered).
+
 ``` r
-selected_columns <- totals$data%>%group_by(gameTypeId)%>%select(gamesPlayed, gameTypeId, triCode, roadLosses, roadWins, gameTypeId, wins) %>% mutate(win_ratio=wins/gamesPlayed, .keep = 'unused') %>% mutate(category_col= if_else(win_ratio<0.3,'T4', if_else(win_ratio>=0.3&win_ratio<0.4, 'T3', if_else(win_ratio>=0.4&win_ratio<0.5, 'T2', if_else(win_ratio>0.5, 'T1', 'NA')))))
-selected_columns <- selected_columns %>% mutate(game_type=paste0('Game Type ID: ', gameTypeId), .keep = 'unused') %>% mutate(road_win_loss_ratio=roadWins/roadLosses, .keep = 'unused')
-box_plot <- selected_columns %>% ggplot(aes(category_col, road_win_loss_ratio)) + geom_boxplot() + geom_jitter(aes(color=category_col)) + facet_wrap(vars(game_type), scales = 'free') + xlab("Team Tiers (Based on Total Win Ratio)") + ylab("Road Win-Loss Ratio")
+selected_columns <- totals$data %>%
+  group_by(gameTypeId) %>%
+  select(gamesPlayed, gameTypeId, triCode, roadLosses, roadWins, gameTypeId, wins) %>%
+  mutate(win_ratio = wins / gamesPlayed, .keep = 'unused') %>%
+  mutate(category_col = if_else(win_ratio < 0.3, 'T4', if_else(win_ratio >= 0.3 & win_ratio < 0.4, 'T3', if_else(win_ratio >= 0.4 & win_ratio < 0.5, 'T2', if_else(win_ratio > 0.5, 'T1', 'NA')))))
+selected_columns <- selected_columns %>%
+  mutate(game_type = paste0('Game Type ID: ', gameTypeId), .keep = 'unused') %>%
+  mutate(road_win_loss_ratio = roadWins / roadLosses, .keep = 'unused')
+box_plot <- selected_columns %>% ggplot(aes(category_col, road_win_loss_ratio)) +
+  geom_boxplot() +
+  geom_jitter(aes(color = category_col)) +
+  facet_wrap(vars(game_type), scales = 'free') +
+  xlab("Team Tiers (Based on Total Win Ratio)") +
+  ylab("Road Win-Loss Ratio")
 box_plot + theme(panel.background = element_rect(fill = 'transparent', color = 'black'), panel.grid = element_blank(), legend.position = "none")
 ```
 
@@ -199,6 +261,6 @@ box_plot + theme(panel.background = element_rect(fill = 'transparent', color = '
 **4.** <https://www.json.org/json-en.html>  
 **5.** <https://nordicapis.com/the-benefits-of-using-json-api/>  
 **6.**
-<http://anotherpeak.org/blog/tech/2016/03/10/understand_json_3.html>
+<http://anotherpeak.org/blog/tech/2016/03/10/understand_json_3.html>  
 **7.**
 <https://cran.csiro.au/web/packages/tidyjson/vignettes/introduction-to-tidyjson.html>
